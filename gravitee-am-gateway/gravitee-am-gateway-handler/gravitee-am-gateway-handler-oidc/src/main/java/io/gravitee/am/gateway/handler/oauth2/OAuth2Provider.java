@@ -15,10 +15,12 @@
  */
 package io.gravitee.am.gateway.handler.oauth2;
 
+import io.gravitee.am.common.policy.ExtensionPoint;
 import io.gravitee.am.gateway.handler.api.ProtocolProvider;
 import io.gravitee.am.gateway.handler.common.client.ClientSyncService;
 import io.gravitee.am.gateway.handler.common.vertx.web.auth.handler.RedirectAuthHandler;
 import io.gravitee.am.gateway.handler.common.vertx.web.auth.provider.UserAuthProvider;
+import io.gravitee.am.gateway.handler.common.vertx.web.handler.PolicyChainHandler;
 import io.gravitee.am.gateway.handler.oauth2.resources.auth.handler.ClientAssertionAuthHandler;
 import io.gravitee.am.gateway.handler.oauth2.resources.auth.handler.ClientBasicAuthHandler;
 import io.gravitee.am.gateway.handler.oauth2.resources.auth.handler.ClientCredentialsAuthHandler;
@@ -122,6 +124,9 @@ public class OAuth2Provider extends AbstractService<ProtocolProvider> implements
     @Autowired
     private CSRFHandler csrfHandler;
 
+    @Autowired
+    private PolicyChainHandler policyChainHandler;
+
     @Override
     protected void doStart() throws Exception {
         super.doStart();
@@ -202,6 +207,7 @@ public class OAuth2Provider extends AbstractService<ProtocolProvider> implements
                 .handler(revocationTokenEndpoint);
         oauth2Router.route(HttpMethod.GET, "/confirm_access")
                 .handler(userApprovalRequestParseHandler)
+                .handler(policyChainHandler.create(ExtensionPoint.PRE_CONSENT))
                 .handler(userApprovalEndpoint);
         oauth2Router.route(HttpMethod.GET, "/error")
                 .handler(new ErrorEndpoint(thymeleafTemplateEngine));
